@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web.com | Professional Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #000; --surface: #121212; --border: #262626;
+            --accent: #0095f6; --text: #fff; --text-dim: #a8a8a8;
+            --grad: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+        
+        /* --- AUTH SYSTEM UI --- */
+        #auth-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { width: 350px; padding: 30px; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; text-align: center; }
+        .auth-box h1 { font-size: 32px; margin-bottom: 20px; font-style: italic; }
+        .auth-input { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; border: 1px solid var(--border); color: #fff; border-radius: 5px; }
+        .main-btn { width: 100%; padding: 10px; background: var(--accent); border: none; border-radius: 5px; color: #fff; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .toggle-auth { margin-top: 15px; color: var(--text-dim); cursor: pointer; font-size: 14px; }
+
+        /* --- LAYOUT --- */
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.9); border-bottom: 1px solid var(--border); z-index: 1000; display: flex; align-items: center; }
+        .nav-inner { max-width: 975px; margin: 0 auto; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; align-items: center; }
+        .nav-icons { display: flex; gap: 22px; font-size: 22px; cursor: pointer; }
+
+        main { max-width: 935px; margin: 80px auto 0; display: grid; grid-template-columns: 1fr 320px; gap: 30px; }
+        
+        /* --- STORIES --- */
+        .stories-bar { display: flex; gap: 15px; overflow-x: auto; padding: 15px; background: var(--surface); border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .story-circle { min-width: 66px; text-align: center; cursor: pointer; }
+        .ring { width: 64px; height: 64px; border-radius: 50%; padding: 2px; background: var(--grad); margin-bottom: 5px; }
+        .ring img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #000; object-fit: cover; }
+        .add-story { background: #333 !important; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* --- POSTS (FEED) --- */
+        .post { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 24px; }
+        .post-header { padding: 12px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .post-media { width: 100%; background: #000; overflow: hidden; }
+        .post-media video, .post-media img { width: 100%; max-height: 600px; display: block; object-fit: contain; }
+        .post-actions { padding: 12px; display: flex; gap: 15px; font-size: 24px; }
+        .fa-heart.active { color: #ff3040; animation: beat 0.3s ease; }
+        .post-details { padding: 0 12px 12px; }
+
+        /* --- REELS VIEW --- */
+        #reels-screen { display: none; height: 100vh; width: 100vw; background: #000; position: fixed; inset: 0; z-index: 2000; overflow-y: scroll; scroll-snap-type: y mandatory; }
+        .reel-unit { height: 100vh; width: 100%; scroll-snap-align: start; position: relative; display: flex; justify-content: center; }
+        .reel-unit video { height: 100%; max-width: 500px; width: 100%; object-fit: cover; }
+        .reel-side { position: absolute; bottom: 100px; right: 20px; display: flex; flex-direction: column; gap: 20px; font-size: 28px; }
+
+        /* --- PROFILE TAHRIRLASH --- */
+        #profile-screen { display: none; max-width: 600px; margin: 100px auto; padding: 20px; background: var(--surface); border-radius: 12px; }
+        .profile-header { display: flex; gap: 30px; align-items: center; margin-bottom: 40px; }
+        .profile-img-big { width: 150px; height: 150px; border-radius: 50%; background: #333; object-fit: cover; cursor: pointer; }
+
+        /* --- MODALS --- */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; place-items: center; z-index: 5000; }
+        .modal-content { width: 400px; background: var(--surface); border-radius: 15px; padding: 20px; }
+        
+        @keyframes beat { 0% {transform:scale(1)} 50% {transform:scale(1.2)} 100% {transform:scale(1)} }
+        @media (max-width: 768px) { main { grid-template-columns: 1fr; } aside { display: none; } }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-box" id="login-form">
+            <h1>Web.com</h1>
+            <input type="text" id="l-user" class="auth-input" placeholder="Username">
+            <input type="password" id="l-pass" class="auth-input" placeholder="Parol">
+            <button class="main-btn" onclick="app.login()">Kirish</button>
+            <p class="toggle-auth" onclick="app.toggleAuth(true)">Akkountingiz yo'qmi? Ro'yxatdan o'ting</p>
+        </div>
+        <div class="auth-box" id="register-form" style="display:none;">
+            <h1>Ro'yxatdan o'tish</h1>
+            <input type="text" id="r-user" class="auth-input" placeholder="Yangi Username">
+            <input type="password" id="r-pass" class="auth-input" placeholder="Parol">
+            <button class="main-btn" onclick="app.register()">Ro'yxatdan o'tish</button>
+            <p class="toggle-auth" onclick="app.toggleAuth(false)">Kirishga qaytish</p>
+        </div>
+    </div>
+
+    <header>
+        <div class="nav-inner">
+            <div class="logo" onclick="app.changeView('feed')">Web.com</div>
+            <div class="nav-icons">
+                <i class="fas fa-home" onclick="app.changeView('feed')"></i>
+                <i class="fab fa-playstation" onclick="app.changeView('reels')"></i>
+                <i class="far fa-plus-square" onclick="app.openModal('post')"></i>
+                <i class="far fa-user" onclick="app.changeView('profile')"></i>
+                <i class="fas fa-sign-out-alt" onclick="app.logout()"></i>
+            </div>
+        </div>
+    </header>
+
+    <main id="view-feed">
+        <section>
+            <div class="stories-bar" id="story-row">
+                </div>
+            <div id="feed-container"></div>
+        </section>
+        <aside>
+            <div style="display:flex; align-items:center; gap:15px;" id="side-user-info">
+                </div>
+        </aside>
+    </main>
+
+    <div id="reels-screen"></div>
+
+    <div id="profile-screen">
+        <div class="profile-header">
+            <img src="" id="p-img-display" class="profile-img-big" onclick="document.getElementById('p-file').click()">
+            <input type="file" id="p-file" hidden onchange="app.updateProfileImg(this)">
+            <div>
+                <h2 id="p-name-display">Username</h2>
+                <button class="main-btn" style="width:120px; background:#333;" onclick="app.openModal('edit')">Tahrirlash</button>
+            </div>
+        </div>
+        <hr style="border:0.5px solid var(--border)">
+        <div id="user-posts-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-top:20px;"></div>
+    </div>
+
+    <div class="modal" id="post-modal">
+        <div class="modal-content">
+            <h3>Yangi post yaratish</h3><br>
+            <input type="file" id="post-file" accept="video/*,image/*" class="auth-input">
+            <textarea id="post-cap" class="auth-input" placeholder="Tavsif..."></textarea>
+            <button class="main-btn" onclick="app.createPost()">Ulashish</button>
+            <button class="main-btn" style="background:#333;" onclick="app.closeModals()">Bekor qilish</button>
+        </div>
+    </div>
+
+    <script>
+        // MUKAMMAL STATE MANAGEMENT
+        const app = {
+            db: JSON.parse(localStorage.getItem('web_db')) || { users: [], posts: [], stories: [] },
+            currentUser: JSON.parse(localStorage.getItem('web_session')) || null,
+
+            save: function() { localStorage.setItem('web_db', JSON.stringify(this.db)); },
+
+            toggleAuth: (reg) => {
+                document.getElementById('login-form').style.display = reg ? 'none' : 'block';
+                document.getElementById('register-form').style.display = reg ? 'block' : 'none';
+            },
+
+            register: function() {
+                const u = document.getElementById('r-user').value.trim().toLowerCase();
+                const p = document.getElementById('r-pass').value;
+                if(this.db.users.find(x => x.user === u)) return alert("Bu username band!");
+                if(!u || !p) return alert("To'ldiring!");
+                
+                this.db.users.push({ user: u, pass: p, avatar: '', bio: 'Web.com foydalanuvchisi' });
+                this.save();
+                alert("Muvaffaqiyatli! Endi kiring.");
+                this.toggleAuth(false);
+            },
+
+            login: function() {
+                const u = document.getElementById('l-user').value.trim().toLowerCase();
+                const p = document.getElementById('l-pass').value;
+                const user = this.db.users.find(x => x.user === u && x.pass === p);
+                if(!user) return alert("Xato ma'lumot!");
+                
+                this.currentUser = user;
+                localStorage.setItem('web_session', JSON.stringify(user));
+                document.getElementById('auth-overlay').style.display = 'none';
+                this.init();
+            },
+
+            logout: function() {
+                localStorage.removeItem('web_session');
+                location.reload();
+            },
+
+            changeView: function(view) {
+                const views = ['view-feed', 'reels-screen', 'profile-screen'];
+                views.forEach(v => document.getElementById(v).style.display = 'none');
+                if(view === 'feed') { document.getElementById('view-feed').style.display = 'grid'; this.renderFeed(); }
+                if(view === 'reels') { document.getElementById('reels-screen').style.display = 'block'; this.renderReels(); }
+                if(view === 'profile') { document.getElementById('profile-screen').style.display = 'block'; this.renderProfile(); }
+            },
+
+            openModal: (id) => document.getElementById(id + '-modal').style.display = 'grid',
+            closeModals: () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'),
+
+            updateProfileImg: function(input) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const user = this.db.users.find(x => x.user === this.currentUser.user);
+                    user.avatar = e.target.result;
+                    this.currentUser.avatar = e.target.result;
+                    this.save();
+                    this.renderProfile();
+                }
+                reader.readAsDataURL(input.files[0]);
+            },
+
+            createPost: function() {
+                const file = document.getElementById('post-file').files[0];
+                const cap = document.getElementById('post-cap').value;
+                if(!file) return alert("Fayl tanlang!");
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.db.posts.push({
+                        id: Date.now(),
+                        owner: this.currentUser.user,
+                        type: file.type.includes('video') ? 'video' : 'image',
+                        src: e.target.result,
+                        caption: cap,
+                        likes: []
+                    });
+                    this.save();
+                    this.closeModals();
+                    this.renderFeed();
+                }
+                reader.readAsDataURL(file);
+            },
+
+            toggleLike: function(id) {
+                const post = this.db.posts.find(x => x.id === id);
+                const idx = post.likes.indexOf(this.currentUser.user);
+                if(idx > -1) post.likes.splice(idx, 1);
+                else post.likes.push(this.currentUser.user);
+                this.save();
+                this.renderFeed();
+            },
+
+            renderFeed: function() {
+                const container = document.getElementById('feed-container');
+                container.innerHTML = this.db.posts.slice().reverse().map(p => `
+                    <div class="post">
+                        <div class="post-header"><div class="p-avatar"><img src="${this.getAvatar(p.owner)}" style="width:100%; border-radius:50%"></div>${p.owner}</div>
+                        <div class="post-media" ondoubleclick="app.toggleLike(${p.id})">
+                            ${p.type === 'video' ? `<video src="${p.src}" controls loop muted autoplay></video>` : `<img src="${p.src}">`}
+                        </div>
+                        <div class="post-actions">
+                            <i class="fa${p.likes.includes(this.currentUser.user) ? 's' : 'r'} fa-heart ${p.likes.includes(this.currentUser.user) ? 'active' : ''}" onclick="app.toggleLike(${p.id})"></i>
+                            <i class="far fa-comment"></i>
+                            <i class="far fa-paper-plane" onclick="alert('Link nusxalandi!')"></i>
+                        </div>
+                        <div class="post-details"><b>${p.likes.length} likes</b><br><b>${p.owner}</b> ${p.caption}</div>
+                    </div>
+                `).join('');
+                this.renderStories();
+            },
+
+            renderReels: function() {
+                const reels = document.getElementById('reels-screen');
+                reels.innerHTML = this.db.posts.filter(p => p.type === 'video').map(v => `
+                    <div class="reel-unit">
+                        <video src="${v.src}" autoplay loop></video>
+                        <div class="reel-side">
+                            <i class="fas fa-heart" onclick="app.toggleLike(${v.id})"></i>
+                            <i class="fas fa-comment"></i>
+                            <i class="fas fa-share-alt"></i>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            renderProfile: function() {
+                document.getElementById('p-img-display').src = this.currentUser.avatar || 'https://via.placeholder.com/150';
+                document.getElementById('p-name-display').innerText = this.currentUser.user;
+                const grid = document.getElementById('user-posts-grid');
+                grid.innerHTML = this.db.posts.filter(p => p.owner === this.currentUser.user).map(p => `
+                    <div style="height:200px; background:#111; overflow:hidden">
+                        ${p.type === 'video' ? `<video src="${p.src}" style="width:100%; height:100%; object-fit:cover"></video>` : `<img src="${p.src}" style="width:100%; height:100%; object-fit:cover">`}
+                    </div>
+                `).join('');
+            },
+
+            renderStories: function() {
+                const row = document.getElementById('story-row');
+                row.innerHTML = `<div class="story-circle" onclick="app.addStory()"><div class="ring add-story"><i class="fa fa-plus"></i></div><span>Mening</span></div>` + 
+                this.db.users.filter(u => u.avatar).map(u => `
+                    <div class="story-circle"><div class="ring"><img src="${u.avatar}"></div><span>${u.user}</span></div>
+                `).join('');
+            },
+
+            getAvatar: function(name) {
+                const u = this.db.users.find(x => x.user === name);
+                return u?.avatar || 'https://via.placeholder.com/150';
+            },
+
+            init: function() {
+                if(this.currentUser) {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    this.renderFeed();
+                }
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+  </html>
+  
